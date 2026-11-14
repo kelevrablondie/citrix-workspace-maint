@@ -113,12 +113,12 @@ REAL_CHECK=1 tests/test.sh  # also starts the real wfica
 
 ## Contributors
 
-- **terra**: owner, tester, and the patient human who kept pasting core dumps until something gave.
+- **kelevrablondie**: owner, tester, and the patient human who kept parsing core dumps until something gave.
   Spotted the multi-monitor span, which was the real cause of the black screen. Pressed Shift+F2 so you don't have to wonder.
-- **Claude** (Anthropic): read core dumps, logs and `.ini` files, wrote the script, and was
+- **Claude** (Anthropic): analyse core dumps, logs and `.ini` files, helped write the script, and was
   told "that's a lie" exactly once. Deserved it.
-- **Citrix**: special thanks for turning "show me a remote desktop on a bastion host" into an
+- **Citrix**: special thanks for turning "connect me to a remote desktop on a bastion host" into an
   evening of EGL platforms, two WebKit generations, a SAML store vs. a domain store, a URL parser
   that throws on a successful response, and a 7680-pixel black rectangle. Truly a diva. 💅
 
-Plan to spend an afternoon on it the first time.
+Plan to spend an afternoon on it the first time. Or 1 hour if you are Citrix Dev/Maintainer. I'll buy you a coffee someday. Maybe
