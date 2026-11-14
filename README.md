@@ -58,17 +58,17 @@ Usually not:
 - `libpcsclite.so` (in the session log): smart cards. `dnf install pcsc-lite-libs` if you use one.
 
 ### Adding the store: "Incorrect domain"
-The gateway offers two stores. `BTC-XA7` wants a domain password and rejects SAML/FAS logins.
+The gateway offers two stores. `Main-XE7` as an example name wants a domain password and rejects SAML/FAS logins.
 Use the FAS store:
 ```bash
-./citrix-maint.sh run util/storebrowse -a "https://storefront.btcnet.btc-ag.com/Citrix/BTC-XA7-FAS/discovery"
+./citrix-maint.sh run util/storebrowse -a "place the actual FAS discovery here from cr or ica file from your workspace"
 ```
 Remove the other one if it's there (it opens a login window that always fails):
-`./citrix-maint.sh run util/storebrowse -d 'https://storefront.btcnet.btc-ag.com/citrix/btc-xa7/discovery'`
+`./citrix-maint.sh run util/storebrowse -d 'place the actual FAS discovery here from cr or ica file from your workspace`
 
-### But `storefront.btcnet…` doesn't resolve from outside?
+### But `storefront.*` doesn't resolve from outside?
 It doesn't need to. The client looks the store up in its service record, sees
-`NETWORK_LOCATION_OUTSIDE`, and sends everything through the gateway `cag.btc-ag.com`.
+`NETWORK_LOCATION_OUTSIDE`, and sends everything through the gateway, for example `cag.domain.com`.
 
 ### The login window is glitchy / opens several times / prints `gssapi … SPNEGO` warnings
 - Glitchy: the GTK/WebKit login window misbehaves as a native Wayland window. `fix` and `run`
