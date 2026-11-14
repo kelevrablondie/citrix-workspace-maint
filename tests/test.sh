@@ -19,10 +19,19 @@ printf '[Desktop Entry]\nName=S\nExec= /opt/x/selfservice --icaroot /opt/x\n' > 
 
 # fix: adds env once, idempotent
 "$S" fix >/dev/null; "$S" fix >/dev/null
-grep -qx 'Exec=env EGL_PLATFORM=x11 /opt/x/adapter %f' "$APPS_DIR/wfica.desktop" || fail "fix wfica"
-grep -qx 'Exec=env EGL_PLATFORM=x11 /opt/x/selfservice --icaroot /opt/x' "$APPS_DIR/selfservice.desktop" || fail "fix selfservice"
+grep -qx 'Exec=env EGL_PLATFORM=x11 GDK_BACKEND=x11 /opt/x/adapter %f' "$APPS_DIR/wfica.desktop" || fail "fix wfica"
+grep -qx 'Exec=env EGL_PLATFORM=x11 GDK_BACKEND=x11 /opt/x/selfservice --icaroot /opt/x' "$APPS_DIR/selfservice.desktop" || fail "fix selfservice"
 [[ $(grep -c EGL_PLATFORM "$APPS_DIR/wfica.desktop") == 1 ]] || fail "fix not idempotent"
+# fix: upgrades an older override (EGL only) instead of stacking env prefixes
+sed -i 's#^Exec=.*#Exec=env EGL_PLATFORM=x11 /opt/x/adapter %f#' "$SYS_APPS_DIR/wfica.desktop"
+"$S" fix >/dev/null
+grep -qx 'Exec=env EGL_PLATFORM=x11 GDK_BACKEND=x11 /opt/x/adapter %f' "$APPS_DIR/wfica.desktop" || fail "fix upgrade: $(grep Exec "$APPS_DIR/wfica.desktop")"
 ok fix
+
+# run: resolves relative paths under CITRIX_ROOT and passes the env
+printf '#!/bin/sh\necho "$EGL_PLATFORM $GDK_BACKEND $1"\n' > "$CITRIX_ROOT/tool"; chmod +x "$CITRIX_ROOT/tool"
+[[ $("$S" run tool hi) == "x11 x11 hi" ]] || fail "run"
+ok run
 
 # status
 st=$("$S" status)

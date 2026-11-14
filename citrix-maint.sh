@@ -11,8 +11,11 @@ SYS_APPS=${SYS_APPS_DIR:-/usr/share/applications}
 BACKUPS=${BACKUP_DIR:-$HOME/Backups/citrix-workspace}
 KEEP=${KEEP:-3}
 SUDO=${SUDO-sudo}
-# Launchers that start wfica; wfica segfaults on Wayland unless EGL is forced to X11.
+# Launchers that start wfica and the Citrix UI. On Wayland wfica segfaults in its EGL probe
+# (Nobara exports EGL_PLATFORM=wayland session-wide) and the GTK/WebKit windows misbehave natively,
+# so both run under XWayland.
 LAUNCHERS=(wfica.desktop selfservice.desktop)
+CITRIX_ENV=(EGL_PLATFORM=x11 GDK_BACKEND=x11)
 
 die() { echo "error: $*" >&2; exit 1; }
 log() { echo "==> $*"; }
@@ -24,7 +27,7 @@ cmd_status() {
   echo "version:  $(version || true)"
   [[ -d $ROOT ]] && echo "install:  $(install_type) at $ROOT" || echo "install:  not found at $ROOT"
   for f in "${LAUNCHERS[@]}"; do
-    grep -qs 'EGL_PLATFORM=x11' "$APPS/$f" && echo "fix:      $f ok" || echo "fix:      $f MISSING (run: $0 fix)"
+    grep -qs "Exec=env ${CITRIX_ENV[*]} " "$APPS/$f" && echo "fix:      $f ok" || echo "fix:      $f MISSING (run: $0 fix)"
   done
   echo "backups:  $BACKUPS"
   ls -1t "$BACKUPS"/*.tar.zst 2>/dev/null | sed 's/^/  /' || echo "  (none)"
@@ -70,7 +73,7 @@ cmd_fix() {
   mkdir -p "$APPS"
   for f in "${LAUNCHERS[@]}"; do
     [[ -f $SYS_APPS/$f ]] || { echo "skip: $SYS_APPS/$f not found"; continue; }
-    sed -E '/^Exec=/{/EGL_PLATFORM=x11/!s#^Exec= *#Exec=env EGL_PLATFORM=x11 #}' "$SYS_APPS/$f" > "$APPS/$f"
+    sed -E "s#^Exec= *(env [A-Z_]+=[^ ]+ +)*#Exec=env ${CITRIX_ENV[*]} #" "$SYS_APPS/$f" > "$APPS/$f"
     log "$f: $(grep -m1 '^Exec=' "$APPS/$f")"
   done
   command -v update-desktop-database >/dev/null && update-desktop-database "$APPS" 2>/dev/null || true
@@ -82,7 +85,7 @@ cmd_check() {
   [[ -x $ROOT/wfica ]] || die "no wfica at $ROOT"
   local tmp rc=0; tmp=$(mktemp -d)
   printf '[WFClient]\nVersion=2\n[ApplicationServers]\nTest=\n[Test]\nAddress=127.0.0.1:1\nTransportDriver=TCP/IP\n' > "$tmp/t.ica"
-  ICAROOT=$ROOT EGL_PLATFORM=x11 timeout 8 "$ROOT/wfica" "$tmp/t.ica" >"$tmp/log" 2>&1 || rc=$?
+  env ICAROOT="$ROOT" "${CITRIX_ENV[@]}" timeout 8 "$ROOT/wfica" "$tmp/t.ica" >"$tmp/log" 2>&1 || rc=$?
   pkill -f "$tmp/t.ica" 2>/dev/null || true
   rm -rf -- "$tmp"
   case $rc in
@@ -120,7 +123,8 @@ usage: $(basename "$0") <command>
   backup              back up install + user config + launchers (keeps $KEEP)
   update <pkg>        backup, install tarball/rpm, reapply fix, run check
   restore [backup]    restore a backup (default: newest)
-  fix                 (re)create launcher overrides with EGL_PLATFORM=x11
+  fix                 (re)create launcher overrides with ${CITRIX_ENV[*]}
+  run <cmd> [args]    run a Citrix tool with that env, e.g. run util/storebrowse -l
   check               start wfica and verify it doesn't crash at startup
 Get packages at https://www.citrix.com/downloads/workspace-app/linux/
 EOF
@@ -128,5 +132,7 @@ EOF
 
 case ${1:-} in
   status|backup|restore|fix|check|update) c=$1; shift; "cmd_$c" "$@" ;;
+  run) shift; [[ -n ${1:-} ]] || die "usage: $0 run <cmd> [args]"
+       c=$1; shift; [[ $c == /* ]] || c=$ROOT/$c; exec env "${CITRIX_ENV[@]}" "$c" "$@" ;;
   *) usage; [[ -z ${1:-} ]] || exit 1 ;;
 esac

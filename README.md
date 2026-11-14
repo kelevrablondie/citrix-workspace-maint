@@ -9,6 +9,7 @@ Maintenance and backup for Citrix Workspace app for Linux (tarball or RPM instal
 ./citrix-maint.sh restore [backup]    # roll back (default: newest backup)
 ./citrix-maint.sh fix                 # recreate launcher overrides
 ./citrix-maint.sh check               # verify wfica doesn't crash at startup
+./citrix-maint.sh run <cmd> [args]    # run a Citrix tool (relative to the install dir) under XWayland
 ```
 
 Citrix publishes no dnf repo and the download needs a EULA click, so get the package from
@@ -17,7 +18,9 @@ https://www.citrix.com/downloads/workspace-app/linux/ and pass it to `update`.
 **Wayland fix:** on a Wayland session `wfica` segfaults in its startup OpenGL probe
 (`EglWindow::load_egl` -> `wl_proxy_create_wrapper`), with both NVIDIA and Mesa EGL.
 `fix` writes user copies of `wfica.desktop` and `selfservice.desktop` to
-`~/.local/share/applications` with `EGL_PLATFORM=x11`. System files are untouched.
+`~/.local/share/applications` with `EGL_PLATFORM=x11 GDK_BACKEND=x11` (Nobara exports `EGL_PLATFORM=wayland`
+session-wide; the GTK/WebKit login window is also glitchy as a native Wayland client).
+System files are untouched. For terminal use: `./citrix-maint.sh run util/storebrowse -l`.
 
 Env overrides: `BACKUP_DIR`, `KEEP`, `CITRIX_ROOT`, `CITRIX_USER_CFG`, `APPS_DIR`, `SYS_APPS_DIR`, `SUDO`.
 
