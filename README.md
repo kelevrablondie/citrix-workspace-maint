@@ -1,4 +1,4 @@
-# citrix-maint
+# Citrix Maintener Script aka citrix-maint
 
 Keep **Citrix Workspace app for Linux** installed, backed up and actually working on a
 Wayland desktop with an NVIDIA + AMD hybrid GPU.
